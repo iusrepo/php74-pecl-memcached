@@ -1,29 +1,22 @@
-# spec file for php-pecl-memcached
+# Fedora spec file for php-pecl-memcached
 #
-# Copyright (c) 2009-2014 Remi Collet
+# Copyright (c) 2009-2016 Remi Collet
 # License: CC-BY-SA
 # http://creativecommons.org/licenses/by-sa/3.0/
 #
 # Please, preserve the changelog entries
 #
 
-%{!?__pecl:      %global __pecl       %{_bindir}/pecl}
-
 %global with_zts    0%{?__ztsphp:1}
-%global with_tests  %{?_with_tests:1}%{!?_with_tests:0}
+%global with_tests  0%{?_with_tests:1}
 %global pecl_name   memcached
-%if "%{php_version}" < "5.6"
-# After igbinary, json, msgpack
-%global ini_name  z-%{pecl_name}.ini
-%else
 # After 40-igbinary, 40-json, 40-msgpack
 %global ini_name  50-%{pecl_name}.ini
-%endif
 
 Summary:      Extension to work with the Memcached caching daemon
 Name:         php-pecl-memcached
 Version:      2.2.0
-Release:      7%{?dist}
+Release:      8%{?dist}
 # memcached is PHP, FastLZ is MIT
 License:      PHP and MIT
 Group:        Development/Languages
@@ -47,9 +40,6 @@ BuildRequires: cyrus-sasl-devel
 BuildRequires: memcached
 %endif
 
-Requires(post): %{__pecl}
-Requires(postun): %{__pecl}
-
 Requires:     php-json%{?_isa}
 Requires:     php-pecl-igbinary%{?_isa}
 Requires:     php(zend-abi) = %{php_zend_api}
@@ -62,12 +52,6 @@ Provides:     php-%{pecl_name} = %{version}
 Provides:     php-%{pecl_name}%{?_isa} = %{version}
 Provides:     php-pecl(%{pecl_name}) = %{version}
 Provides:     php-pecl(%{pecl_name})%{?_isa} = %{version}
-
-%if 0%{?fedora} < 20 && 0%{?rhel} < 7
-# Filter private shared
-%{?filter_provides_in: %filter_provides_in %{_libdir}/.*\.so$}
-%{?filter_setup}
-%endif
 
 
 %description
@@ -173,16 +157,6 @@ do install -Dpm 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
 
 
-%post
-%{pecl_install} %{pecl_xmldir}/%{name}.xml >/dev/null || :
-
-
-%postun
-if [ $1 -eq 0 ] ; then
-    %{pecl_uninstall} %{pecl_name} >/dev/null || :
-fi
-
-
 %check
 OPT="-n"
 [ -f %{php_extdir}/igbinary.so ] && OPT="$OPT -d extension=igbinary.so"
@@ -253,6 +227,10 @@ exit $ret
 
 
 %changelog
+* Wed Feb 10 2016 Remi Collet <remi@fedoraproject.org> - 2.2.0-8
+- drop scriptlets (replaced by file triggers in php-pear)
+- cleanup
+
 * Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 2.2.0-7
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
 
