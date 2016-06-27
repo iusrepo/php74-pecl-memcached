@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2009-2016 Remi Collet
 # License: CC-BY-SA
-# http://creativecommons.org/licenses/by-sa/3.0/
+# http://creativecommons.org/licenses/by-sa/4.0/
 #
 # Please, preserve the changelog entries
 #
@@ -11,21 +11,30 @@
 %global with_tests  0%{?_with_tests:1}
 %global pecl_name   memcached
 # After 40-igbinary, 40-json, 40-msgpack
-%global ini_name  50-%{pecl_name}.ini
+%global ini_name    50-%{pecl_name}.ini
+# https://github.com/php-memcached-dev/php-memcached/commits/php7
+%global gh_commit   6ace07da69a5ebc021e56a9d2f52cdc8897b4f23
+%global gh_short    %(c=%{gh_commit}; echo ${c:0:7})
+%global gh_date     20160217
+%global gh_owner    php-memcached-dev
+%global gh_project  php-memcached
 
 Summary:      Extension to work with the Memcached caching daemon
 Name:         php-pecl-memcached
-Version:      2.2.0
-Release:      8%{?dist}
-# memcached is PHP, FastLZ is MIT
-License:      PHP and MIT
+Version:      3.0.0
+%if 0%{?gh_date:1}
+Release:      0.1.%{gh_date}git%{gh_short}%{?dist}
+Source0:      https://github.com/%{gh_owner}/%{gh_project}/archive/%{gh_commit}/%{gh_project}-%{version}%{?prever}-%{gh_short}.tar.gz
+%else
+Release:      1%{?dist}
+Source0:      http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
+%endif
+License:      PHP
 Group:        Development/Languages
 URL:          http://pecl.php.net/package/%{pecl_name}
 
-Source0:      http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
-# 5.2.10 required to HAVE_JSON enabled
-BuildRequires: php-devel >= 5.2.10
+BuildRequires: php-devel >= 7
 BuildRequires: php-pear
 BuildRequires: php-json
 BuildRequires: php-pecl-igbinary-devel
@@ -36,16 +45,17 @@ BuildRequires: libevent-devel  > 2
 BuildRequires: libmemcached-devel > 1
 BuildRequires: zlib-devel
 BuildRequires: cyrus-sasl-devel
+BuildRequires: fastlz-devel
 %if %{with_tests}
 BuildRequires: memcached
 %endif
 
 Requires:     php-json%{?_isa}
-Requires:     php-pecl-igbinary%{?_isa}
+Requires:     php-igbinary%{?_isa}
 Requires:     php(zend-abi) = %{php_zend_api}
 Requires:     php(api) = %{php_core_api}
 %ifnarch ppc64
-Requires:     php-pecl-msgpack%{?_isa}
+Requires:     php-msgpack%{?_isa}
 %endif
 
 Provides:     php-%{pecl_name} = %{version}
@@ -68,11 +78,31 @@ It also provides a session handler (memcached).
 %prep 
 %setup -c -q
 
+%if 0%{?gh_date:1}
+mv %{gh_project}-%{gh_commit} NTS
+sed -e '/PHP_MEMCACHED_VERSION/s/3.0.0b1/%{version}-dev/' -i NTS/php_memcached.h
+%{__php} -r '
+  $pkg = simplexml_load_file("NTS/package.xml");
+  $pkg->date = substr("%{gh_date}",0,4)."-".substr("%{gh_date}",4,2)."-".substr("%{gh_date}",6,2);
+  $pkg->version->release = "%{version}dev";
+  $pkg->stability->release = "devel";
+  $pkg->asXML("package.xml");
+'
+%else
 mv %{pecl_name}-%{version}%{?prever} NTS
+%endif
+
+# Don't install/register tests
+sed -e 's/role="test"/role="src"/' \
+    -e '/LICENSE/s/role="doc"/role="src"/' \
+    -e '/name=.fastlz/d' \
+    -i package.xml
+
+rm -r NTS/fastlz
 
 # Chech version as upstream often forget to update this
 extver=$(sed -n '/#define PHP_MEMCACHED_VERSION/{s/.* "//;s/".*$//;p}' NTS/php_memcached.h)
-if test "x${extver}" != "x%{version}"; then
+if test "x${extver}" != "x%{version}%{?gh_date:-dev}%{?intver}"; then
    : Error: Upstream HTTP version is now ${extver}, expecting %{version}.
    : Update the pdover macro and rebuild.
    exit 1
@@ -114,7 +144,12 @@ peclconf() {
 %ifnarch ppc64
            --enable-memcached-msgpack \
 %endif
+%if 1
+           --disable-memcached-protocol \
+%else
            --enable-memcached-protocol \
+%endif
+           --with-system-fastlz \
            --with-php-config=$1
 }
 cd NTS
@@ -149,9 +184,6 @@ install -D -m 644 %{ini_name} %{buildroot}%{php_ztsinidir}/%{ini_name}
 
 # Test & Documentation
 cd NTS
-for i in $(grep 'role="test"' ../package.xml | sed -e 's/^.*name="//;s/".*$//')
-do install -Dpm 644 $i %{buildroot}%{pecl_testdir}/%{pecl_name}/$i
-done
 for i in $(grep 'role="doc"' ../package.xml | sed -e 's/^.*name="//;s/".*$//')
 do install -Dpm 644 $i %{buildroot}%{pecl_docdir}/%{pecl_name}/$i
 done
@@ -213,8 +245,8 @@ exit $ret
 
 
 %files
+%license NTS/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
-%doc %{pecl_testdir}/%{pecl_name}
 %{pecl_xmldir}/%{name}.xml
 
 %config(noreplace) %{php_inidir}/%{ini_name}
@@ -227,6 +259,11 @@ exit $ret
 
 
 %changelog
+* Mon Jun 27 2016 Remi Collet <rcollet@redhat.com> - 3.0.0-0.1.20160217git6ace07d
+- git snapshopt for PHP 7
+- don't install/register tests
+- fix license installation
+
 * Wed Feb 10 2016 Remi Collet <remi@fedoraproject.org> - 2.2.0-8
 - drop scriptlets (replaced by file triggers in php-pear)
 - cleanup
