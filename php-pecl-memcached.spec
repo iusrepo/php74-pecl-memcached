@@ -15,16 +15,13 @@
 
 Summary:      Extension to work with the Memcached caching daemon
 Name:         php-pecl-memcached
-Version:      3.0.1
+Version:      3.0.2
 Release:      1%{?dist}
 License:      PHP
 Group:        Development/Languages
 URL:          http://pecl.php.net/package/%{pecl_name}
 
 Source0:      http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
-
-# https://github.com/php-memcached-dev/php-memcached/pull/319
-Patch0:       %{pecl_name}-pr319.patch
 
 BuildRequires: php-devel >= 7
 BuildRequires: php-pear
@@ -80,7 +77,6 @@ sed -e 's/role="test"/role="src"/' \
 rm -r NTS/fastlz
 
 cd NTS
-%patch0 -p1 -b .pr319
 
 # Chech version as upstream often forget to update this
 extver=$(sed -n '/#define PHP_MEMCACHED_VERSION/{s/.* "//;s/".*$//;p}' php_memcached.h)
@@ -247,6 +243,9 @@ exit $ret
 
 
 %changelog
+* Mon Feb 13 2017 Remi Collet <remi@fedoraproject.org> - 3.0.2-1
+- update to 3.0.2 (php 7, stable)
+
 * Thu Feb  9 2017 Remi Collet <remi@fedoraproject.org> - 3.0.1-1
 - update to 3.0.1 (php 7, stable)
 - switch to pecl sources
