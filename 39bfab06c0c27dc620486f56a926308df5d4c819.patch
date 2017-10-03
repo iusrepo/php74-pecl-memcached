@@ -1,0 +1,76 @@
+From 39bfab06c0c27dc620486f56a926308df5d4c819 Mon Sep 17 00:00:00 2001
+From: Aaron Stone <aaron@serendipity.cx>
+Date: Tue, 11 Jul 2017 15:57:51 -0700
+Subject: [PATCH] In PHP 7.2 the session_start() error messages have changed a
+ bit (#359)
+
+See PHP Bug 71038 for details https://bugs.php.net/bug.php?id=71038
+Added PHP 7.2.0alpha2 to Travis CI matrix
+---
+ .travis.yml                              |  3 ++-
+ package.xml                              |  1 +
+ tests/session_badconf_servers-php72.phpt | 30 ++++++++++++++++++++++++++++++
+ tests/session_badconf_servers.phpt       |  7 ++++---
+ 4 files changed, 37 insertions(+), 4 deletions(-)
+ create mode 100644 tests/session_badconf_servers-php72.phpt
+
+diff --git a/tests/session_badconf_servers-php72.phpt b/tests/session_badconf_servers-php72.phpt
+new file mode 100644
+index 0000000..9201236
+--- /dev/null
++++ b/tests/session_badconf_servers-php72.phpt
+@@ -0,0 +1,30 @@
++--TEST--
++Session bad configurations, invalid save path (server list)
++--SKIPIF--
++<?php
++include dirname(__FILE__) . "/skipif.inc";
++if (!Memcached::HAVE_SESSION) print "skip";
++if (PHP_VERSION_ID < 70200) print "skip";
++?>
++--INI--
++session.save_handler = memcached
++--FILE--
++<?php
++include dirname (__FILE__) . '/config.inc';
++ini_set ('session.save_path', MEMC_SERVER_HOST . ':' . MEMC_SERVER_PORT);
++
++error_reporting(0);
++function handler($errno, $errstr) {
++	echo "$errstr\n";
++}
++
++set_error_handler('handler', E_ALL);
++
++ini_set('memcached.sess_prefix', 'memc.sess.key.');
++ini_set('session.save_path', '');
++session_start();
++session_write_close();
++
++--EXPECT--
++session_start(): failed to parse session.save_path
++session_start(): Failed to initialize storage module: memcached (path: )
+diff --git a/tests/session_badconf_servers.phpt b/tests/session_badconf_servers.phpt
+index b5c0803..57d7773 100644
+--- a/tests/session_badconf_servers.phpt
++++ b/tests/session_badconf_servers.phpt
+@@ -1,9 +1,10 @@
+ --TEST--
+ Session bad configurations, invalid save path (server list)
+ --SKIPIF--
+-<?php 
+-include dirname(__FILE__) . "/skipif.inc"; 
++<?php
++include dirname(__FILE__) . "/skipif.inc";
+ if (!Memcached::HAVE_SESSION) print "skip";
++if (PHP_VERSION_ID > 70100) print "skip";
+ ?>
+ --INI--
+ session.save_handler = memcached
+@@ -24,5 +25,5 @@ ini_set('session.save_path', '');
+ session_start();
+ session_write_close();
+ 
+---EXPECTF--
++--EXPECT--
+ session_start(): failed to parse session.save_path

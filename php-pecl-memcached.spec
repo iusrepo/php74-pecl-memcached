@@ -23,6 +23,9 @@ URL:          http://pecl.php.net/package/%{pecl_name}
 
 Source0:      http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
+Patch0:       43bbf0080206b157b0d3f47ab1f07ede4bc80c86.patch
+Patch1:       39bfab06c0c27dc620486f56a926308df5d4c819.patch
+
 BuildRequires: php-devel >= 7
 BuildRequires: php-pear
 BuildRequires: php-json
@@ -77,6 +80,8 @@ sed -e 's/role="test"/role="src"/' \
 rm -r NTS/fastlz
 
 cd NTS
+%patch0 -p1 -b .upstream
+%patch1 -p1 -b .upstream
 
 # Chech version as upstream often forget to update this
 extver=$(sed -n '/#define PHP_MEMCACHED_VERSION/{s/.* "//;s/".*$//;p}' php_memcached.h)
