@@ -1,11 +1,14 @@
 # Fedora spec file for php-pecl-memcached
 #
-# Copyright (c) 2009-2017 Remi Collet
+# Copyright (c) 2009-2018 Remi Collet
 # License: CC-BY-SA
 # http://creativecommons.org/licenses/by-sa/4.0/
 #
 # Please, preserve the changelog entries
 #
+
+# we don't want -z defs linker flag
+%undefine _strict_symbol_defs_build
 
 %global with_zts    0%{!?_without_zts:%{?__ztsphp:1}}
 %global with_tests  0%{!?_without_tests:1}
@@ -16,7 +19,7 @@
 Summary:      Extension to work with the Memcached caching daemon
 Name:         php-pecl-memcached
 Version:      3.0.4
-Release:      1%{?dist}
+Release:      2%{?dist}
 License:      PHP
 Group:        Development/Languages
 URL:          http://pecl.php.net/package/%{pecl_name}
@@ -239,6 +242,9 @@ exit $ret
 
 
 %changelog
+* Mon Jan 29 2018 Remi Collet <remi@remirepo.net> - 3.0.4-2
+- undefine _strict_symbol_defs_build
+
 * Tue Nov 21 2017 Remi Collet <remi@remirepo.net> - 3.0.4-1
 - Update to 3.0.4
 
