@@ -1,3 +1,5 @@
+# IUS spec file for php73-pecl-memcached, forked from:
+#
 # Fedora spec file for php-pecl-memcached
 #
 # Copyright (c) 2009-2018 Remi Collet
@@ -10,6 +12,7 @@
 # we don't want -z defs linker flag
 %undefine _strict_symbol_defs_build
 
+%global php         php73
 %global with_zts    0%{!?_without_zts:%{?__ztsphp:1}}
 %global with_tests  0%{!?_without_tests:1}
 %global pecl_name   memcached
@@ -17,24 +20,25 @@
 %global ini_name    50-%{pecl_name}.ini
 
 Summary:      Extension to work with the Memcached caching daemon
-Name:         php-pecl-memcached
+Name:         %{php}-pecl-memcached
 Version:      3.1.3
-Release:      2%{?dist}
+Release:      3%{?dist}
 License:      PHP
-URL:          http://pecl.php.net/package/%{pecl_name}
+URL:          https://pecl.php.net/package/%{pecl_name}
 
-Source0:      http://pecl.php.net/get/%{pecl_name}-%{version}.tgz
+Source0:      https://pecl.php.net/get/%{pecl_name}-%{version}.tgz
 
 BuildRequires: gcc
-BuildRequires: php-devel >= 7
-BuildRequires: php-pear
-BuildRequires: php-json
-BuildRequires: php-pecl-igbinary-devel
+BuildRequires: %{php}-devel
+# build require pear1's dependencies to avoid mismatched php stacks
+BuildRequires: pear1 %{php}-cli %{php}-common %{php}-xml
+BuildRequires: %{php}-json
+BuildRequires: %{php}-pecl-igbinary-devel
 %ifnarch ppc64
-BuildRequires: php-pecl-msgpack-devel
+BuildRequires: %{php}-pecl-msgpack-devel
 %endif
 BuildRequires: libevent-devel  > 2
-BuildRequires: libmemcached-devel > 1.0.16
+BuildRequires: libmemcached-devel >= 1.0.16
 BuildRequires: zlib-devel
 BuildRequires: cyrus-sasl-devel
 BuildRequires: fastlz-devel
@@ -42,18 +46,23 @@ BuildRequires: fastlz-devel
 BuildRequires: memcached
 %endif
 
-Requires:     php-json%{?_isa}
-Requires:     php-igbinary%{?_isa}
+Requires:     %{php}-json%{?_isa}
+Requires:     %{php}-pecl-igbinary%{?_isa}
 Requires:     php(zend-abi) = %{php_zend_api}
 Requires:     php(api) = %{php_core_api}
 %ifnarch ppc64
-Requires:     php-msgpack%{?_isa}
+Requires:     %{php}-pecl-msgpack%{?_isa}
 %endif
 
 Provides:     php-%{pecl_name} = %{version}
 Provides:     php-%{pecl_name}%{?_isa} = %{version}
 Provides:     php-pecl(%{pecl_name}) = %{version}
 Provides:     php-pecl(%{pecl_name})%{?_isa} = %{version}
+
+# safe replacement
+Provides:     php-pecl-%{pecl_name} = %{version}-%{release}
+Provides:     php-pecl-%{pecl_name}%{?_isa} = %{version}-%{release}
+Conflicts:    php-pecl-%{pecl_name} < %{version}-%{release}
 
 
 %description
@@ -151,7 +160,7 @@ make install -C NTS INSTALL_ROOT=%{buildroot}
 install -D -m 644 %{ini_name} %{buildroot}%{php_inidir}/%{ini_name}
 
 # Install XML package description
-install -D -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{name}.xml
+install -D -m 644 package.xml %{buildroot}%{pecl_xmldir}/%{pecl_name}.xml
 
 # Install the ZTS extension
 %if %{with_zts}
@@ -226,10 +235,28 @@ exit $ret
 %endif
 
 
+%triggerin -- pear1
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
+
+
+%posttrans
+if [ -x %{__pecl} ]; then
+    %{pecl_install} %{pecl_xmldir}/%{pecl_name}.xml >/dev/null || :
+fi
+
+
+%postun
+if [ $1 -eq 0 -a -x %{__pecl} ]; then
+    %{pecl_uninstall} %{pecl_name} >/dev/null || :
+fi
+
+
 %files
 %license NTS/LICENSE
 %doc %{pecl_docdir}/%{pecl_name}
-%{pecl_xmldir}/%{name}.xml
+%{pecl_xmldir}/%{pecl_name}.xml
 
 %config(noreplace) %{php_inidir}/%{ini_name}
 %{php_extdir}/%{pecl_name}.so
@@ -241,6 +268,9 @@ exit $ret
 
 
 %changelog
+* Tue Jun 11 2019 Carl George <carl@george.computer> - 3.1.3-3
+- Port from Fedora to IUS
+
 * Sat Feb 02 2019 Fedora Release Engineering <releng@fedoraproject.org> - 3.1.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 
