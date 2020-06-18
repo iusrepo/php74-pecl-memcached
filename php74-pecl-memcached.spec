@@ -1,4 +1,4 @@
-# IUS spec file for php73-pecl-memcached, forked from:
+# IUS spec file for php74-pecl-memcached, forked from:
 #
 # Fedora spec file for php-pecl-memcached
 #
@@ -12,7 +12,7 @@
 # we don't want -z defs linker flag
 %undefine _strict_symbol_defs_build
 
-%global php         php73
+%global php         php74
 %global with_zts    0%{!?_without_zts:%{?__ztsphp:1}}
 %global with_tests  0%{!?_without_tests:1}
 %global pecl_name   memcached
@@ -21,7 +21,7 @@
 
 Summary:      Extension to work with the Memcached caching daemon
 Name:         %{php}-pecl-memcached
-Version:      3.1.4
+Version:      3.1.5
 Release:      1%{?dist}
 License:      PHP
 URL:          https://pecl.php.net/package/%{pecl_name}
@@ -38,7 +38,7 @@ BuildRequires: %{php}-pecl-igbinary-devel
 BuildRequires: %{php}-pecl-msgpack-devel
 %endif
 BuildRequires: libevent-devel  > 2
-BuildRequires: libmemcached-devel >= 1.0.16
+BuildRequires: libmemcached-devel
 BuildRequires: zlib-devel
 BuildRequires: cyrus-sasl-devel
 BuildRequires: fastlz-devel
@@ -268,6 +268,10 @@ fi
 
 
 %changelog
+* Thu Jun 18 2020 Jeff Sheltren <jeff@tag1consulting.com> - 3.1.5-1
+- Rebuild for PHP 7.4
+- Latest upstream
+
 * Wed Oct 09 2019 Carl George <carl@george.computer> - 3.1.4-1
 - Latest upstream
 
